@@ -10,7 +10,7 @@ class orderTableWidget(QWidget):
         self.setLayout(self.layout)
 
         self.table_widget = QTableWidget()
-        self.table_widget.setMinimumSize(600, 650)
+        self.table_widget.setMinimumSize(600, 600)
         self.table_widget.setObjectName("order_table")
         self.table_widget.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows) # select all row
         self.table_widget.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)        # can't modify the table value
@@ -19,9 +19,10 @@ class orderTableWidget(QWidget):
         self.table_widget.setColumnCount(len(headers))
         self.table_widget.setHorizontalHeaderLabels(headers)
 
-        self.table_widget.setColumnWidth(0, 130)
+        self.table_widget.setColumnWidth(0, 200)
         self.table_widget.setColumnWidth(1, 90)
         self.table_widget.setColumnWidth(2, 90)
+        self.table_widget.setColumnWidth(3, 90)
 
         self.total_price_label = QLabel("總價：0 TWD")
         self.total_price_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)

@@ -26,6 +26,30 @@ class ProductManager(QObject):
 
         return products_dict
 
+    # @property
+    # def products_dict(self):
+    #     return self._products_dict
+    #
+    # @products_dict.setter
+    # def products_dict(self, value):
+    #     self._products_dict = value
+    #     self.updateTable.emit()
+    #
+    # def __setitem__(self, key, value):
+    #     """
+    #     覆盖字典的 __setitem__ 方法，在设置 products_dict 的同时触发 updateTable 信号
+    #     """
+    #     self._products_dict[key] = value
+    #     self.updateTable.emit()
+
+    def new_order(self):
+        """
+        初始化所有產品的數量為0
+        """
+        for product_info in self.products_dict.values():
+            product_info['Numbers'] = 0
+        self.updateTable.emit()
+
     def increase_quantity(self, product_name, amount=1):
         """
         增加產品數量
@@ -71,6 +95,7 @@ class ProductManager(QObject):
         """
         self.decrease_quantity(product_name)
         self.print_current_quantities()
+
 
 if __name__ == '__main__':
     # 初始化 ProductManager 實例，並從 JSON 檔案中讀取產品資訊

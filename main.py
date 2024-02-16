@@ -11,14 +11,15 @@ from PyQt6 import uic
 
 import productManager
 from logger import DBG_logger
+
+
 # from coffeelion_ui import Ui_coffeelion
 # from dynamicbtn_ui import Ui_dynamicBtnWindow
 
 class CoffeeLionApp(QMainWindow):
     def __init__(self):
         super().__init__()
-
-        self.dynamic_Btn = None
+        self.product_list_widget = None
         self.log_textBrowser = None
         self.checkout_button = None
         self.scan_button = None
@@ -26,44 +27,39 @@ class CoffeeLionApp(QMainWindow):
         self.total_price_label = None
         self.order_table = None
 
-        self.all_item_price = 0
         self.manager = productManager.ProductManager('coffeelionProductList.json')
+
         # init ui
         self.init_ui()
-        DBG_logger.logger.info("===== START =====")
-        # Connect button clicks to functions
-        # self.order_button.clicked.connect(self.order)
-        # self.checkout_button.clicked.connect(self.checkout)
-        # self.scan_button.clicked.connect(self.scan)
+        DBG_logger.logger.info("\n ============================= START ============================= \n")
 
-    # def order(self):
-    #     self.manager = productManager.ProductManager('coffeelionProductList.json')
-    #     # self.update_order_table()
-    #     self.log_textBrowser.clear()
+    def order_btn_clicked(self):
+        DBG_logger.logger.debug(f"order_btn_clicked")
+        self.manager.new_order()
 
-    # def checkout(self):
-    #     order_summary = ""
-    #     for item, product in enumerate(self.manager.products_dict):
-    #         price = self.manager.products_dict[product]['Price']
-    #         nums = self.manager.products_dict[product]['Numbers']
-    #         total_price = price * nums
-    #
-    #         if nums > 0:
-    #             order_summary += f"{product}: {price} * {nums} = {total_price}\n"
-    #
-    #     msg_box = QMessageBox()
-    #     msg_box.setWindowTitle("訂購清單")
-    #     msg_box.setText(f"訂購清單: \n{order_summary}\n\n 總價: {self.all_item_price} 元")
-    #     msg_box.exec()
-    #
-    #     self.manager = productManager.ProductManager('coffeelionProductList.json')
-    #     self.update_order_table()
-    #     self.log_textBrowser.clear()
+    def checkout_btn_clicked(self):
+        DBG_logger.logger.debug(f"checkout_btn_clicked")
+        order_summary = ""
+        sum_total_item_price = 0
+        for item, product in enumerate(self.manager.products_dict):
+            price = self.manager.products_dict[product]['Price']
+            nums = self.manager.products_dict[product]['Numbers']
+            sum_each_item_price = price * nums
 
-    # def scan(self):
-    #     self.log_textBrowser.append(
-    #         f'{time.strftime("%m-%d %H:%M:%S", time.localtime())} Scan mode')
+            if nums > 0:
+                order_summary += f"{product}: {price} * {nums} = {sum_each_item_price}\n"
+                sum_total_item_price += sum_each_item_price
 
+        msg_box = QMessageBox()
+        msg_box.setWindowTitle("訂購清單")
+        msg_box.setText(f"訂購清單: \n{order_summary}\n\n 總價: {sum_total_item_price} 元")
+        msg_box.exec()
+
+        self.manager.new_order()
+
+    def scan_btn_clicked(self):
+        DBG_logger.logger.debug(f"scan_btn_clicked")
+        self.update_status("Scan")
 
     def init_ui(self):
         # uic.loadUi('coffeelion.ui', self)
@@ -76,7 +72,7 @@ class CoffeeLionApp(QMainWindow):
         main_layout = QHBoxLayout()
         main_widget.setLayout(main_layout)
 
-        # region A
+        # Region A: Vertical Layout
         left_layout = QVBoxLayout()
         main_layout.addLayout(left_layout)
 
@@ -84,37 +80,57 @@ class CoffeeLionApp(QMainWindow):
         self.order_table = orderTableWidget()
         left_layout.addWidget(self.order_table)
 
-        button_layout = QHBoxLayout()
-        left_layout.addLayout(button_layout)
+        # Horizontal layout for order and checkout buttons
+        order_button_layout = QHBoxLayout()
+        left_layout.addLayout(order_button_layout)
 
         self.order_button = QPushButton("Order")
-        button_layout.addWidget(self.order_button)
-
-        self.scan_button = QPushButton("Scan")
-        button_layout.addWidget(self.scan_button)
+        order_button_layout.addWidget(self.order_button)
+        self.order_button.clicked.connect(self.order_btn_clicked)
 
         self.checkout_button = QPushButton("Checkout")
-        button_layout.addWidget(self.checkout_button)
+        order_button_layout.addWidget(self.checkout_button)
+        self.checkout_button.clicked.connect(self.checkout_btn_clicked)
 
-        self.log_textBrowser = QTextBrowser()
-        self.log_textBrowser.setMinimumSize(600, 200)
-        font = QFont()
-        font.setPointSize(10)
-        self.log_textBrowser.setFont(font)
+        # Horizontal layout for scan, +, - buttons
+        scan_button_layout = QHBoxLayout()
+        left_layout.addLayout(scan_button_layout)
+
+        self.scan_button = QPushButton("Scan")
+        scan_button_layout.addWidget(self.scan_button)
+        self.scan_button.clicked.connect(self.scan_btn_clicked)
+
+        plus_button = QPushButton("+")
+        scan_button_layout.addWidget(plus_button)
+
+        minus_button = QPushButton("-")
+        scan_button_layout.addWidget(minus_button)
+
+        from logTextBrowser import logTextBrowser
+        self.log_textBrowser = logTextBrowser()
         left_layout.addWidget(self.log_textBrowser)
         DBG_logger.setup_logging(self.log_textBrowser, level=logging.NOTSET)
 
-        # region B
+        # Region B: Product List Widget (Horizontal Layout)
         from productListBtnWidget import productListBtnWidget
         self.product_list_widget = productListBtnWidget()
+
+        # Status Bar
+        self.statusBar = self.statusBar()
+        self.statusBar.showMessage("Ready")  # 初始訊息
 
         # Connect signal from ProductListBtnWidget to increase_quantity_from_signal method of ProductManager
         self.product_list_widget.increaseQuantity.connect(self.manager.increase_quantity_from_signal)
         self.product_list_widget.decreaseQuantity.connect(self.manager.decrease_quantity_from_signal)
         main_layout.addWidget(self.product_list_widget)
 
-        from functools import partial # merge the function and param into one functionn
+        from functools import partial  # merge the function and param into one functionn
         self.manager.updateTable.connect(partial(self.order_table.update_order_table, self.manager))
+
+        self.update_status("Done")
+
+    def update_status(self, message):
+        self.statusBar.showMessage(message)
 
 
 def main():

@@ -63,11 +63,11 @@ class productListBtnWidget(QWidget):
 
     def on_plus_clicked(self, name):
         self.increaseQuantity.emit(name)
-        DBG_logger.logger.debug(f"order {name} +1")
+        DBG_logger.logger.debug(f"order {name} +1 clicked")
 
     def on_minus_clicked(self, name):
         self.decreaseQuantity.emit(name)
-        DBG_logger.logger.debug(f"order {name} -1")
+        DBG_logger.logger.debug(f"order {name} -1 clicked")
 
 if __name__ == '__main__':
     from PyQt6.QtWidgets import QApplication
