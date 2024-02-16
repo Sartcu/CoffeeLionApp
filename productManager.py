@@ -1,7 +1,11 @@
 import json
+from PyQt6.QtCore import QObject, pyqtSignal
+from logger import DBG_logger
 
-class ProductManager:
+class ProductManager(QObject):
+    updateTable = pyqtSignal()
     def __init__(self, file_path):
+        super().__init__()
         self.products_dict = self.load_products(file_path)
 
     def load_products(self, file_path):
@@ -14,7 +18,6 @@ class ProductManager:
         products_dict = {}
         for product in data['CoffeeLineProduct']:
             product_info = {
-                # 'Name': product['Name'],
                 'Code': product['Code'],
                 'Price': product['Price'],
                 'Numbers': 0  # 初始數量為0
@@ -29,8 +32,9 @@ class ProductManager:
         """
         if product_name in self.products_dict:
             self.products_dict[product_name]['Numbers'] += amount
+            self.updateTable.emit()
         else:
-            print(f"找不到產品 {product_name}")
+            DBG_logger.logger.info(f"找不到產品 {product_name}")
 
     def decrease_quantity(self, product_name, amount=1):
         """
@@ -39,20 +43,34 @@ class ProductManager:
         if product_name in self.products_dict:
             if self.products_dict[product_name]['Numbers'] >= amount:
                 self.products_dict[product_name]['Numbers'] -= amount
+                self.updateTable.emit()
             else:
-                print(f"產品 {product_name} 的數量不足")
+                DBG_logger.logger.info(f"產品 {product_name} 的數量不足")
         else:
-            print(f"找不到產品 {product_name}")
+            DBG_logger.logger.info(f"找不到產品 {product_name}")
 
     def print_current_quantities(self):
         """
         列印當前產品數量
         """
-        print("當前產品數量：")
+        DBG_logger.logger.info("\n===== 當前產品數量：")
         for product_name, product_info in self.products_dict.items():
-            print(f"{product_name}: {product_info['Numbers']}")
+            if product_info['Numbers'] > 0:
+                DBG_logger.logger.info(f"{product_name}: {product_info['Numbers']}")
 
+    def increase_quantity_from_signal(self, product_name):
+        """
+        從信號中接收產品名稱，增加產品數量
+        """
+        self.increase_quantity(product_name)
+        self.print_current_quantities()
 
+    def decrease_quantity_from_signal(self, product_name):
+        """
+        從信號中接收產品名稱，減少產品數量
+        """
+        self.decrease_quantity(product_name)
+        self.print_current_quantities()
 
 if __name__ == '__main__':
     # 初始化 ProductManager 實例，並從 JSON 檔案中讀取產品資訊
@@ -64,17 +82,4 @@ if __name__ == '__main__':
 
     # 列印當前產品數量
     manager.print_current_quantities()
-    print(manager.products_dict)
-    print(manager.products_dict.keys())
-    print(f"manager.products_dict.keys(), {len(manager.products_dict.keys())}")
-    for index, product in enumerate(manager.products_dict):
-        print(f" index {index}, product {product}, {manager.products_dict[product]['Code']}")
 
-    for item, product in enumerate(manager.products_dict):
-
-        price = manager.products_dict[product]['Price']
-        nums = manager.products_dict[product]['Numbers']
-        total_price = price * nums
-        # print(f"price {price} nums {nums} total_price {total_price}")
-        order_summary = "\n".join([f"{product}: {price} * {nums} = {total_price}"])
-        print(order_summary)
