@@ -1,6 +1,7 @@
 import sys
 import json
 import time
+import logging
 
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QLabel,
                              QPushButton, QTextBrowser, QTableWidgetItem, QTableWidget, QMessageBox)
@@ -8,7 +9,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6 import uic
 
 import productManager
-
+from logger import DBG_logger
 # from coffeelion_ui import Ui_coffeelion
 # from dynamicbtn_ui import Ui_dynamicBtnWindow
 
@@ -20,14 +21,14 @@ class CoffeeLionApp(QMainWindow):
         self.checkout_button = None
         self.scan_button = None
         self.order_button = None
-        self.totalprice_label = None
+        self.total_price_label = None
         self.order_table = None
 
         self.all_item_price = 0
+        self.manager = productManager.ProductManager('coffeelionProductList.json')
+
         # init ui
         self.init_ui()
-
-        self.manager = productManager.ProductManager('coffeelionProductList.json')
 
         # Connect button clicks to functions
         self.order_button.clicked.connect(self.order)
@@ -64,14 +65,11 @@ class CoffeeLionApp(QMainWindow):
 
     def update_order_table(self):
         # Clear previous content
-        self.order_table.clear()
+        self.order_table.clearContents()
 
         # Set row and column count
-        headers = ["品名", "單價", "數量", "單項總和"]
         num_products = len(self.manager.products_dict)
         self.order_table.setRowCount(num_products)
-        self.order_table.setColumnCount(len(headers))
-        self.order_table.setHorizontalHeaderLabels(headers)
 
         # Populate table with product names and quantities
         self.all_item_price = 0
@@ -92,8 +90,8 @@ class CoffeeLionApp(QMainWindow):
                 self.order_table.setItem(row_index, 2, quantity_item)
                 self.order_table.setItem(row_index, 3, total_item)
                 row_index += 1  # Increment row index for the next product
-        self.totalprice_label.setText(f"總價: {self.all_item_price}")
-        self.order_table.resizeColumnsToContents()
+        self.total_price_label.setText(f"總價: {self.all_item_price}")
+
 
     def init_ui(self):
         # uic.loadUi('coffeelion.ui', self)
@@ -106,18 +104,17 @@ class CoffeeLionApp(QMainWindow):
         main_layout = QHBoxLayout()
         main_widget.setLayout(main_layout)
 
-        # 左側區域 A
+        # region A
         left_layout = QVBoxLayout()
         main_layout.addLayout(left_layout)
 
-        self.order_table = QTableWidget()
-        self.order_table.setFixedSize(450, 650)
-        self.order_table.setObjectName("order_table")
+        from orderTable import orderTableWidget
+        self.order_table = orderTableWidget()
         left_layout.addWidget(self.order_table)
 
-        self.totalprice_label = QLabel("總價: 0 元")
-        self.totalprice_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
-        left_layout.addWidget(self.totalprice_label)
+        self.total_price_label = QLabel("總價: 0 元")
+        self.total_price_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
+        left_layout.addWidget(self.total_price_label)
 
         button_layout = QHBoxLayout()
         left_layout.addLayout(button_layout)
@@ -132,14 +129,18 @@ class CoffeeLionApp(QMainWindow):
         button_layout.addWidget(self.checkout_button)
 
         self.log_textBrowser = QTextBrowser()
-        self.log_textBrowser.setFixedSize(450, 200)
+        self.log_textBrowser.setFixedSize(600, 200)
         left_layout.addWidget(self.log_textBrowser)
+        DBG_logger.setup_logging(self.log_textBrowser, level=logging.NOTSET)
 
-        # 右側區域 B
+        # signal and slot
+        # self.order_table.cell_clicked.connect(self.on_cell_clicked)
+
+        # region B
         right_layout = QVBoxLayout()
         main_layout.addLayout(right_layout)
 
-        # 讀取 'coffeelionProductList.json'
+        # read 'coffeelionProductList.json'
         with open('coffeelionProductList.json', 'r') as file:
             data = json.load(file)
 
@@ -147,6 +148,7 @@ class CoffeeLionApp(QMainWindow):
 
         # 根據 JSON 中的項目數量新增按鈕
         for item in data["CoffeeLineProduct"]:
+            code = item["Code"]
             name = item["Name"]
             price = item["Price"]
 
@@ -159,10 +161,15 @@ class CoffeeLionApp(QMainWindow):
             name_label.setFixedWidth(max_name_width * 10 + 30)  # 加上一些額外空間
             hbox.addWidget(name_label)
 
+            # 新增 QLabel 顯示code
+            code_label = QLabel(f'{code}', self)
+            code_label.setFixedWidth(max_name_width * 10)  # 加上一些額外空間
+            hbox.addWidget(code_label)
+
             # 新增 QLabel 顯示價格
             price_label = QLabel(f'{price:.1f}', self)
             # 調整價格標籤寬度以避免價格被蓋住
-            price_label.setFixedWidth(max_name_width * 10)  # 加上一些額外空間
+            price_label.setFixedWidth(max_name_width * 5)  # 加上一些額外空間
             hbox.addWidget(price_label)
 
             # 新增 Item +1 按鈕
@@ -179,17 +186,17 @@ class CoffeeLionApp(QMainWindow):
 
             right_layout.addLayout(hbox)
 
+            self.update_order_table()
+
     def on_plus_clicked(self, name, price):
         self.manager.increase_quantity(str(name))
-        self.log_textBrowser.append(
-            f'{time.strftime("%m-%d %H:%M:%S", time.localtime())} {name} +1 to order')
         self.update_order_table()
+        DBG_logger.logger.info(f"{name} +1")
 
     def on_minus_clicked(self, name, price):
         self.manager.decrease_quantity(str(name))
-        self.log_textBrowser.append(
-            f'{time.strftime("%m-%d %H:%M:%S", time.localtime())} {name} -1 to order')
         self.update_order_table()
+        DBG_logger.logger.info(f"{name} -1")
 
 def main():
     app = QApplication(sys.argv)
