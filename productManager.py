@@ -2,6 +2,10 @@ import json
 from PyQt6.QtCore import QObject, pyqtSignal
 from logger import DBG_logger
 
+import os
+application_path = os.path.dirname(os.path.abspath(__file__))
+file_path = os.path.join(application_path, 'coffeelionProductList.json')
+
 class ProductManager(QObject):
     updateTable = pyqtSignal()
     def __init__(self, file_path):
@@ -42,18 +46,18 @@ class ProductManager(QObject):
     #     self._products_dict[key] = value
     #     self.updateTable.emit()
 
-    def new_order(self):
-        """
-        初始化所有產品的數量為0
-        """
+    def find_product_by_code(self, code):
+        for product_key, product_info in self.products_dict.items():
+            if product_info['Code'] == code:
+                return product_key
+        return None
+
+    def order_clear(self):
         for product_info in self.products_dict.values():
             product_info['Numbers'] = 0
         self.updateTable.emit()
 
     def increase_quantity(self, product_name, amount=1):
-        """
-        增加產品數量
-        """
         if product_name in self.products_dict:
             self.products_dict[product_name]['Numbers'] += amount
             self.updateTable.emit()
@@ -61,9 +65,6 @@ class ProductManager(QObject):
             DBG_logger.logger.info(f"找不到產品 {product_name}")
 
     def decrease_quantity(self, product_name, amount=1):
-        """
-        減少產品數量
-        """
         if product_name in self.products_dict:
             if self.products_dict[product_name]['Numbers'] >= amount:
                 self.products_dict[product_name]['Numbers'] -= amount
@@ -74,37 +75,32 @@ class ProductManager(QObject):
             DBG_logger.logger.info(f"找不到產品 {product_name}")
 
     def print_current_quantities(self):
-        """
-        列印當前產品數量
-        """
-        DBG_logger.logger.info("\n===== 當前產品數量：")
+        DBG_logger.logger.info("===== 當前產品數量：")
         for product_name, product_info in self.products_dict.items():
             if product_info['Numbers'] > 0:
                 DBG_logger.logger.info(f"{product_name}: {product_info['Numbers']}")
-
+        DBG_logger.logger.info("=====\n")
     def increase_quantity_from_signal(self, product_name):
-        """
-        從信號中接收產品名稱，增加產品數量
-        """
         self.increase_quantity(product_name)
-        self.print_current_quantities()
+        # self.print_current_quantities()
 
     def decrease_quantity_from_signal(self, product_name):
-        """
-        從信號中接收產品名稱，減少產品數量
-        """
         self.decrease_quantity(product_name)
-        self.print_current_quantities()
+        # self.print_current_quantities()
 
+    def scan_mode_from_signal(self, product_name, mode):
+        if mode == 0:
+            self.increase_quantity_from_signal(product_name)
+        elif mode == 1:
+            self.decrease_quantity_from_signal(product_name)
+        else:
+            pass
 
 if __name__ == '__main__':
-    # 初始化 ProductManager 實例，並從 JSON 檔案中讀取產品資訊
     manager = ProductManager('coffeelionProductList.json')
 
-    # 增加手機數量
     manager.increase_quantity('綜合水果凍乾(30g)', 3)
     manager.decrease_quantity('綜合水果凍乾(30g)', 2)
 
-    # 列印當前產品數量
-    manager.print_current_quantities()
-
+    # manager.print_current_quantities()
+    print(f" 10101003 is {manager.find_product_by_code('10101003')}")

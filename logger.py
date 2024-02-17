@@ -1,6 +1,9 @@
 import logging
 from PyQt6.QtWidgets import QTextBrowser
 
+import os
+application_path = os.path.dirname(os.path.abspath(__file__))
+file_path = os.path.join(application_path, 'log.txt')
 
 # logger.debug('debug message')
 # logger.info('info message')
@@ -15,9 +18,9 @@ class QTextBrowserLogHandler(logging.Handler):
 
     def emit(self, record):
         msg = self.format(record)
-        msg += '\n'  # 添加换行符
-        self.text_browser.insertPlainText(msg)
-
+        # msg += '\n'  # 添加换行符
+        # self.text_browser.insertPlainText(msg)
+        self.text_browser.append(msg)
 
 class Logger:
     _instance = None
@@ -39,7 +42,7 @@ class Logger:
         self.logger.addHandler(log_handler)
 
         # create logger handler send log to QTextBrowser
-        file_handler = logging.FileHandler('log.txt')
+        file_handler = logging.FileHandler(file_path)
         file_handler.setLevel(logging.DEBUG)
         file_handler.setFormatter(formatter)
         self.logger.addHandler(file_handler)

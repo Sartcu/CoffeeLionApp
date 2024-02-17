@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import QTableWidget, QTableWidgetItem, QWidget, QVBoxLayout, QLabel
-from PyQt6.QtCore import pyqtSignal
 from PyQt6 import QtCore
+from PyQt6.QtCore import Qt
 
 class orderTableWidget(QWidget):
     def __init__(self):
@@ -12,8 +12,8 @@ class orderTableWidget(QWidget):
         self.table_widget = QTableWidget()
         self.table_widget.setMinimumSize(600, 600)
         self.table_widget.setObjectName("order_table")
-        self.table_widget.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows) # select all row
-        self.table_widget.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)        # can't modify the table value
+        self.table_widget.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)  # select all row
+        self.table_widget.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)         # can't modify the table value
 
         headers = ["品名", "單價", "數量", "單項總和"]
         self.table_widget.setColumnCount(len(headers))
@@ -29,6 +29,9 @@ class orderTableWidget(QWidget):
 
         self.layout.addWidget(self.table_widget)
         self.layout.addWidget(self.total_price_label)
+
+        # stop keyPressEvent in this widget
+        self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
     def update_order_table(self, obj):
         # Clear previous content

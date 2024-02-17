@@ -3,6 +3,10 @@ from PyQt6.QtCore import pyqtSignal
 import json
 from logger import DBG_logger
 
+import os
+application_path = os.path.dirname(os.path.abspath(__file__))
+file_path = os.path.join(application_path, 'coffeelionProductList.json')
+
 class productListBtnWidget(QWidget):
     quantityChanged = pyqtSignal(str, int)
     increaseQuantity = pyqtSignal(str)
@@ -15,8 +19,7 @@ class productListBtnWidget(QWidget):
     def init_ui(self):
         layout = QVBoxLayout(self)
 
-        # read 'coffeelionProductList.json'
-        with open('coffeelionProductList.json', 'r') as file:
+        with open(file_path, 'r') as file:
             data = json.load(file)
 
         max_name_width = max(len(item["Name"]) for item in data["CoffeeLineProduct"])
@@ -32,30 +35,28 @@ class productListBtnWidget(QWidget):
 
             # 新增 QLabel 顯示名稱
             name_label = QLabel(f'{name}', self)
-            # 調整價格標籤寬度以避免價格被蓋住
-            name_label.setFixedWidth(max_name_width * 10 + 30)  # 加上一些額外空間
+            name_label.setFixedWidth(max_name_width * 10 + 30)
             hbox.addWidget(name_label)
 
             # 新增 QLabel 顯示code
             code_label = QLabel(f'{code}', self)
-            code_label.setFixedWidth(max_name_width * 10)  # 加上一些額外空間
+            code_label.setFixedWidth(max_name_width * 10)
             hbox.addWidget(code_label)
 
             # 新增 QLabel 顯示價格
             price_label = QLabel(f'{price:.1f}', self)
-            # 調整價格標籤寬度以避免價格被蓋住
-            price_label.setFixedWidth(max_name_width * 5)  # 加上一些額外空間
+            price_label.setFixedWidth(max_name_width * 5)
             hbox.addWidget(price_label)
 
             # 新增 Item +1 按鈕
             btn_plus = QPushButton(f'+1', self)
-            btn_plus.setFixedSize(50, 30)  # 設置按鈕大小
+            btn_plus.setFixedSize(50, 30)
             btn_plus.clicked.connect(lambda checked, name=name, price=price: self.on_plus_clicked(name))
             hbox.addWidget(btn_plus)
 
             # 新增 Item -1 按鈕
             btn_minus = QPushButton(f'-1', self)
-            btn_minus.setFixedSize(50, 30)  # 設置按鈕大小
+            btn_minus.setFixedSize(50, 30)
             btn_minus.clicked.connect(lambda checked, name=name, price=price: self.on_minus_clicked(name))
             hbox.addWidget(btn_minus)
 
