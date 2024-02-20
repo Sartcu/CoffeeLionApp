@@ -12,7 +12,7 @@ application_path = os.path.dirname(os.path.abspath(__file__))
 json_file_path = os.path.join(application_path, 'coffeelionProductList.json')
 record_file_path = os.path.join(application_path, 'recorder.txt')
 
-
+release_version = '242020v01'
 def write_to_record_file(message):
     with open(record_file_path, "a") as file:
         current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
@@ -44,7 +44,8 @@ class CoffeeLionApp(QMainWindow):
 
         # init ui
         self.init_ui()
-        DBG_logger.logger.info("\n ============================= START ============================= \n")
+        self.link_ui()
+        DBG_logger.logger.info(f"\n ============================= START {release_version} ============================= \n")
 
     def keyPressEvent(self, event):
         if not self.scan_btn_state:
@@ -188,15 +189,6 @@ class CoffeeLionApp(QMainWindow):
         main_layout.addWidget(self.product_list_widget)
 
         main_layout.setSpacing(5)
-        # Connect signal from ProductListBtnWidget to increase_quantity_from_signal method of ProductManager
-        self.product_list_widget.increaseQuantity.connect(self.manager.increase_quantity_from_signal)
-        self.product_list_widget.decreaseQuantity.connect(self.manager.decrease_quantity_from_signal)
-
-        from functools import partial  # merge the function and param into one functionn
-        self.manager.updateTable.connect(partial(self.order_table.update_order_table, self.manager))
-
-        self.scanModeSignal.connect(self.manager.scan_mode_from_signal)
-        self.payment_combo.currentIndexChanged.connect(self.update_pay_method)
 
         # Status Bar
         self.statusBar = self.statusBar()
@@ -210,6 +202,16 @@ class CoffeeLionApp(QMainWindow):
         self.scan_status_label.setText("Ready")
         self.scan_mode_status_label.setText("None")
 
+    def link_ui(self):
+        # Connect signal from ProductListBtnWidget to increase_quantity_from_signal method of ProductManager
+        self.product_list_widget.increaseQuantity.connect(self.manager.increase_quantity_from_signal)
+        self.product_list_widget.decreaseQuantity.connect(self.manager.decrease_quantity_from_signal)
+
+        from functools import partial  # merge the function and param into one functionn
+        self.manager.updateTable.connect(partial(self.order_table.update_order_table, self.manager))
+
+        self.scanModeSignal.connect(self.manager.scan_mode_from_signal)
+        self.payment_combo.currentIndexChanged.connect(self.update_pay_method)
 
 def main():
     app = QApplication(sys.argv)
