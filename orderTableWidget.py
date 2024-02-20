@@ -10,7 +10,7 @@ class orderTableWidget(QWidget):
         self.setLayout(self.layout)
 
         self.table_widget = QTableWidget()
-        self.table_widget.setMinimumSize(600, 600)
+        self.table_widget.setMinimumSize(600, 400)
         self.table_widget.setObjectName("order_table")
         self.table_widget.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)  # select all row
         self.table_widget.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)         # can't modify the table value

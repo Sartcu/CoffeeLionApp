@@ -61,7 +61,7 @@ class productListBtnWidget(QWidget):
             hbox.addWidget(btn_minus)
 
             layout.addLayout(hbox)
-
+            layout.setSpacing(5)
     def on_plus_clicked(self, name):
         self.increaseQuantity.emit(name)
         DBG_logger.logger.debug(f"order {name} +1 clicked")

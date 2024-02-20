@@ -3,7 +3,7 @@ import sys
 import logging
 import time
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QLabel,
-                             QPushButton, QTextBrowser, QTableWidgetItem, QTableWidget, QMessageBox)
+                             QPushButton, QTextBrowser, QTableWidgetItem, QTableWidget, QMessageBox, QComboBox)
 from PyQt6.QtCore import Qt, pyqtSignal
 import productManager
 from logger import DBG_logger
@@ -24,6 +24,7 @@ class CoffeeLionApp(QMainWindow):
 
     def __init__(self):
         super().__init__()
+        self.payment_combo = None
         self.product_list_widget = None
         self.log_textBrowser = None
         self.checkout_button = None
@@ -32,12 +33,13 @@ class CoffeeLionApp(QMainWindow):
         self.total_price_label = None
         self.order_table = None
 
+
         self.manager = productManager.ProductManager(json_file_path)
 
         self.input_text = ""
         self.scan_btn_state = False
         self.scan_mode = None  # 0: '+' 1: '-'
-
+        self.pay_method = 'Cash'
         self.order_num = 0
 
         # init ui
@@ -84,11 +86,12 @@ class CoffeeLionApp(QMainWindow):
                 sum_total_item_price += sum_each_item_price
 
         write_to_record_file(f"Total Price: {sum_total_item_price} TWD")
+        write_to_record_file(f"Payment: {self.pay_method}")
         write_to_record_file(f"===== END {self.order_num} ===== \n")
 
         msg_box = QMessageBox()
         msg_box.setWindowTitle("訂購清單")
-        msg_box.setText(f"訂購清單: \n{order_summary}\n\n 總價: {sum_total_item_price} 元")
+        msg_box.setText(f"訂購清單: \n{order_summary}\n\n 總價: {sum_total_item_price} 元 \n\n 支付方式: {self.pay_method}")
         msg_box.exec()
 
         # update
@@ -114,6 +117,12 @@ class CoffeeLionApp(QMainWindow):
         DBG_logger.logger.debug(f"scan_minus_btn_clicked")
         self.scan_mode = 1
         self.scan_mode_status_label.setText("-")
+
+    def update_pay_method(self, index):
+        if index == 0:
+            self.pay_method = 'Cash'
+        elif index == 1:
+            self.pay_method = 'LinePay'
 
     def init_ui(self):
         # uic.loadUi('coffeelion.ui', self)
@@ -146,6 +155,12 @@ class CoffeeLionApp(QMainWindow):
         order_button_layout.addWidget(self.checkout_button)
         self.checkout_button.clicked.connect(self.checkout_btn_clicked)
 
+        # ComboBox for payment method
+        self.payment_combo = QComboBox()
+        self.payment_combo.addItem("Cash")
+        self.payment_combo.addItem("LinePay")
+        order_button_layout.addWidget(self.payment_combo)
+
         # Horizontal layout for scan, +, - buttons
         scan_button_layout = QHBoxLayout()
         left_layout.addLayout(scan_button_layout)
@@ -165,13 +180,14 @@ class CoffeeLionApp(QMainWindow):
         from logTextBrowser import logTextBrowser
         self.log_textBrowser = logTextBrowser()
         left_layout.addWidget(self.log_textBrowser)
-        DBG_logger.setup_logging(self.log_textBrowser, level=logging.INFO)
+        DBG_logger.setup_logging(self.log_textBrowser, level=logging.NOTSET)
 
         # Region B: Product List Widget (Horizontal Layout)
         from productListBtnWidget import productListBtnWidget
         self.product_list_widget = productListBtnWidget()
         main_layout.addWidget(self.product_list_widget)
 
+        main_layout.setSpacing(5)
         # Connect signal from ProductListBtnWidget to increase_quantity_from_signal method of ProductManager
         self.product_list_widget.increaseQuantity.connect(self.manager.increase_quantity_from_signal)
         self.product_list_widget.decreaseQuantity.connect(self.manager.decrease_quantity_from_signal)
@@ -180,6 +196,7 @@ class CoffeeLionApp(QMainWindow):
         self.manager.updateTable.connect(partial(self.order_table.update_order_table, self.manager))
 
         self.scanModeSignal.connect(self.manager.scan_mode_from_signal)
+        self.payment_combo.currentIndexChanged.connect(self.update_pay_method)
 
         # Status Bar
         self.statusBar = self.statusBar()
