@@ -3,16 +3,21 @@ import sys
 import logging
 import time
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QLabel,
-                             QPushButton, QTextBrowser, QTableWidgetItem, QTableWidget, QMessageBox, QComboBox)
-from PyQt6.QtCore import Qt, pyqtSignal
+                             QPushButton, QTextBrowser, QTableWidgetItem, QTableWidget, QMessageBox, QComboBox,
+                             QTabWidget, QScrollArea, QSizePolicy, QListWidget)
+from PyQt6.QtCore import Qt, pyqtSignal, QSize
 import productManager
+import inventoryManager
 from logger import DBG_logger
+
+from functools import partial  # merge the function and param into one functionn
+
 
 application_path = os.path.dirname(os.path.abspath(__file__))
 json_file_path = os.path.join(application_path, 'coffeelionProductList.json')
 record_file_path = os.path.join(application_path, 'recorder.txt')
 
-release_version = '242020v01'
+release_version = '242020v01 45f4d3'
 def write_to_record_file(message):
     with open(record_file_path, "a") as file:
         current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
@@ -33,8 +38,8 @@ class CoffeeLionApp(QMainWindow):
         self.total_price_label = None
         self.order_table = None
 
-
         self.manager = productManager.ProductManager(json_file_path)
+        self.inventoryManager = inventoryManager.InventoryManager()
 
         self.input_text = ""
         self.scan_btn_state = False
@@ -130,18 +135,33 @@ class CoffeeLionApp(QMainWindow):
         # self.setupUi(self)
         self.setWindowTitle("CoffeeLion")
 
-        main_widget = QWidget()
-        self.setCentralWidget(main_widget)
+        # Create a central widget and set a main vertical layout
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+        main_layout = QVBoxLayout(central_widget)
 
-        main_layout = QHBoxLayout()
-        main_widget.setLayout(main_layout)
+        # Create a QTabWidget
+        tab_widget = QTabWidget()
+        main_layout.addWidget(tab_widget)
+
+        """
+        Tabel 1 Checkout Tabel
+        """
+        # Create a container widget for the first tab
+        checkout_tab_widget = QWidget()
+        tab_widget.addTab(checkout_tab_widget, "Checkout")
+
+        # Main layout for the first tab
+        checkout_layout = QHBoxLayout()
+        checkout_tab_widget.setLayout(checkout_layout)
 
         # Region A: Vertical Layout
         left_layout = QVBoxLayout()
-        main_layout.addLayout(left_layout)
+        checkout_layout.addLayout(left_layout)
 
         from orderTableWidget import orderTableWidget
         self.order_table = orderTableWidget()
+        self.order_table.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         left_layout.addWidget(self.order_table)
 
         # Horizontal layout for order and checkout buttons
@@ -178,27 +198,67 @@ class CoffeeLionApp(QMainWindow):
         scan_button_layout.addWidget(self.scan_minus_button)
         self.scan_minus_button.clicked.connect(self.scan_minus_clicked)
 
-        from logTextBrowser import logTextBrowser
-        self.log_textBrowser = logTextBrowser()
-        left_layout.addWidget(self.log_textBrowser)
-        DBG_logger.setup_logging(self.log_textBrowser, level=logging.NOTSET)
-
-        # Region B: Product List Widget (Horizontal Layout)
         from productListBtnWidget import productListBtnWidget
         self.product_list_widget = productListBtnWidget()
-        main_layout.addWidget(self.product_list_widget)
+        self.product_list_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        checkout_layout.addWidget(self.product_list_widget)
 
-        main_layout.setSpacing(5)
+        """
+        Tabel 2
+        """
+        # Create a container widget for the second tab
+        inventory_tab_widget = QWidget()
+        tab_widget.addTab(inventory_tab_widget, "Inventory")
 
+        # Main layout for the inventory tab
+        inventory_layout = QHBoxLayout()
+        inventory_tab_widget.setLayout(inventory_layout)
+
+        # Create and add the QTableWidget to the left side
+        from inventoryTableWidget import inventoryTableWidget
+        self.inventory_table = inventoryTableWidget()
+        inventory_layout.addWidget(self.inventory_table)
+
+        # Create and add the vertical button layout to the right side
+        button_layout = QVBoxLayout()
+        inventory_layout.addLayout(button_layout)
+
+        self.button1 = QPushButton("Button 1")
+        button_layout.addWidget(self.button1)
+        self.button2 = QPushButton("Button 2")
+        button_layout.addWidget(self.button2)
+        self.button3 = QPushButton("Button 3")
+        button_layout.addWidget(self.button3)
+        self.button4 = QPushButton("Button 4")
+        button_layout.addWidget(self.button4)
+
+        """
+        LogTextBrowser
+        """
+        # Create and add the logTextBrowser widget below the tabs
+        from logTextBrowser import LogTextBrowser
+        self.log_textBrowser = LogTextBrowser()
+        main_layout.addWidget(self.log_textBrowser)
+        DBG_logger.setup_logging(self.log_textBrowser, level=logging.NOTSET)
+
+        # Create a scroll area to handle overflow
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setWidget(central_widget)
+        self.setCentralWidget(scroll_area)
+
+        screen_geometry = self.screen().availableGeometry()
+        self.setGeometry(screen_geometry)  # Ensure it fits within screen bounds
+
+        """
+        Status Bar
+        """
         # Status Bar
         self.statusBar = self.statusBar()
-
         self.scan_status_label = QLabel("Scan", self)
         self.statusBar.addPermanentWidget(self.scan_status_label)
-
         self.scan_mode_status_label = QLabel("mode", self)
         self.statusBar.addPermanentWidget(self.scan_mode_status_label)
-
         self.scan_status_label.setText("Ready")
         self.scan_mode_status_label.setText("None")
 
@@ -207,7 +267,6 @@ class CoffeeLionApp(QMainWindow):
         self.product_list_widget.increaseQuantity.connect(self.manager.increase_quantity_from_signal)
         self.product_list_widget.decreaseQuantity.connect(self.manager.decrease_quantity_from_signal)
 
-        from functools import partial  # merge the function and param into one functionn
         self.manager.updateTable.connect(partial(self.order_table.update_order_table, self.manager))
 
         self.scanModeSignal.connect(self.manager.scan_mode_from_signal)
