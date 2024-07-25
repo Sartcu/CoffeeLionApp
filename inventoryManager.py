@@ -100,12 +100,12 @@ class InventoryManager():
             for code, details in self.inventory_dict.items():
                 print(f"Code: {code}, Details: {details}")
 
-    def save_inventory_to_file(self):
+    def save_inventory_to_file(self, type):
         folder_name = "CoffeeLion_Inventory"
         if not os.path.exists(folder_name):
             os.makedirs(folder_name)
 
-        filename = datetime.now().strftime("%Y%m%d_%H%M%S_inventory.txt")
+        filename = datetime.now().strftime(f"%Y%m%d_%H%M%S_{type}.txt")
         file_path = os.path.join(folder_name, filename)
         with open(file_path, 'w', encoding='utf-8') as f:
             for code, details in self.inventory_dict.items():

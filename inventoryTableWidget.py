@@ -1,11 +1,8 @@
-from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtWidgets import QTableWidget, QTableWidgetItem, QWidget, QVBoxLayout, QLabel, QSizePolicy
-from PyQt6 import QtCore
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QTableWidget, QTableWidgetItem, QWidget, QVBoxLayout, QSizePolicy
 
 
 class inventoryTableWidget(QWidget):
-    update_inventory_table = pyqtSignal()
-
     def __init__(self):
         super().__init__()
 
