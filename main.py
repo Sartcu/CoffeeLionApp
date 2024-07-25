@@ -13,6 +13,8 @@ from PyQt6.QtCore import Qt, pyqtSignal
 
 import productManager
 import inventoryManager
+from quantityControlDialog import QuantityControlDialog
+
 from logger import DBG_logger
 from orderTableWidget import orderTableWidget
 from productListBtnWidget import productListBtnWidget
@@ -131,6 +133,35 @@ class CoffeeLionApp(QMainWindow):
     def update_pay_method(self, index):
         self.pay_method = 'Cash' if index == 0 else 'LinePay'
 
+    def refresh_btn_clicked(self):
+        DBG_logger.logger.debug("refresh_btn_clicked")
+        inventory_dict = self.inventoryManager.get_inventory_dict()
+        self.inventory_table.update_table(inventory_dict)
+    
+    def show_dialog(self):
+        dialog = QuantityControlDialog(self)
+        if dialog.exec():
+            code, number = dialog.get_input()
+            DBG_logger.logger.info(f"QuantityControlDialog Code: {code}, Number: {number}")
+            self.inventoryManager.update_quantity(code, int(number))
+        inventory_dict = self.inventoryManager.get_inventory_dict()
+        self.inventory_table.update_table(inventory_dict)
+
+    def inventory_table_scan_clicked(self):
+        DBG_logger.logger.debug("inventory_table_scan_clicked")
+        self.scan_btn_state = not self.scan_btn_state
+        self.scan_status_label.setText("Scan ON" if self.scan_btn_state else "Scan OFF")
+
+    def inventory_table_plus_clicked(self):
+        DBG_logger.logger.debug("inventory_table_plus_clicked")
+        self.scan_mode = 0
+        self.scan_mode_status_label.setText("+")
+
+    def inventory_table_minus_clicked(self):
+        DBG_logger.logger.debug("inventory_table_minus_clicked")
+        self.scan_mode = 1
+        self.scan_mode_status_label.setText("-")
+
     def init_ui(self):
         self.setWindowTitle("CoffeeLion")
         central_widget = QWidget()
@@ -220,7 +251,7 @@ class CoffeeLionApp(QMainWindow):
         self.scan_minus_button.clicked.connect(self.scan_minus_clicked)
 
     def create_inventory_layout(self):
-        inventory_layout = QHBoxLayout()
+        inventory_layout = QVBoxLayout()
 
         self.inventory_table = inventoryTableWidget()
         inventory_layout.addWidget(self.inventory_table)
@@ -228,10 +259,27 @@ class CoffeeLionApp(QMainWindow):
         button_layout = QVBoxLayout()
         inventory_layout.addLayout(button_layout)
 
-        for i in range(1, 5):
-            button = QPushButton(f"Button {i}")
-            button_layout.addWidget(button)
+        self.refresh_btn = QPushButton(f"Refresh")
+        button_layout.addWidget(self.refresh_btn)
+        self.refresh_btn.clicked.connect(self.refresh_btn_clicked)
 
+        self.quantity_control_button = QPushButton(f"Quantity Control")
+        button_layout.addWidget(self.quantity_control_button)
+        self.quantity_control_button.clicked.connect(self.show_dialog)
+
+        horizontal_buttons_layout = QHBoxLayout()
+        self.inventory_table_scan_btn = QPushButton("Scan")
+        self.inventory_table_plus_btn = QPushButton("+")
+        self.inventory_table_minus_btn = QPushButton("-")
+        horizontal_buttons_layout.addWidget(self.inventory_table_scan_btn)
+        horizontal_buttons_layout.addWidget(self.inventory_table_plus_btn)
+        horizontal_buttons_layout.addWidget(self.inventory_table_minus_btn)
+        button_layout.addLayout(horizontal_buttons_layout)
+        inventory_layout.addLayout(button_layout)
+
+        self.inventory_table_scan_btn.clicked.connect(self.inventory_table_scan_clicked)
+        self.inventory_table_plus_btn.clicked.connect(self.inventory_table_plus_clicked)
+        self.inventory_table_minus_btn.clicked.connect(self.inventory_table_minus_clicked)
         return inventory_layout
 
     def create_status_bar(self):
