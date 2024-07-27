@@ -35,9 +35,10 @@ class inventoryTableWidget(QWidget):
         self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
     def update_table(self, data_dict):
-        self.table_widget.setRowCount(len(data_dict))  # Set the number of rows
+        sorted_data = sorted(data_dict.items(), key=lambda item: item[0])
+        self.table_widget.setRowCount(len(sorted_data))
 
-        for row, (code, details) in enumerate(data_dict.items()):
+        for row, (code, details) in enumerate(sorted_data):
             item_name = QTableWidgetItem(details['name'])
             item_code = QTableWidgetItem(code)
             item_quantity = QTableWidgetItem(str(details['quantity']))

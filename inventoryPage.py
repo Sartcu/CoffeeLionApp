@@ -11,6 +11,11 @@ class InventoryPage(QWidget):
         self.setup_ui()
         self.setup_link()
 
+    def get_table_name(self):
+        index = self.app.tab_widget.currentIndex()
+        table_name = self.app.tab_widget.tabText(index)
+        return table_name
+
     def setup_ui(self):
         inventory_layout = QVBoxLayout()
         self.inventory_table = inventoryTableWidget()
@@ -19,8 +24,8 @@ class InventoryPage(QWidget):
         button_layout = QVBoxLayout()
         inventory_layout.addLayout(button_layout)
 
-        self.refresh_btn = QPushButton(f"Refresh")
-        button_layout.addWidget(self.refresh_btn)
+        # self.refresh_btn = QPushButton(f"Refresh")
+        # button_layout.addWidget(self.refresh_btn)
 
         self.quantity_control_button = QPushButton(f"Quantity Control")
         button_layout.addWidget(self.quantity_control_button)
@@ -39,10 +44,10 @@ class InventoryPage(QWidget):
         inventory_layout.addLayout(button_layout)
         self.setLayout(inventory_layout)
 
-    def refresh_btn_clicked(self):
-        DBG_logger.logger.debug("refresh_btn_clicked")
-        inventory_dict = self.inventoryManager.get_inventory_dict()
-        self.inventory_table.update_table(inventory_dict)
+    # def refresh_btn_clicked(self):
+    #     DBG_logger.logger.debug("refresh_btn_clicked")
+    #     inventory_dict = self.inventoryManager._get_inventory_dict(self.get_table_name())
+    #     self.inventory_table.update_table(inventory_dict)
     
     def show_dialog(self):
         dialog = QuantityControlDialog(self)
@@ -56,9 +61,9 @@ class InventoryPage(QWidget):
                 return
 
             DBG_logger.logger.info(f"QuantityControlDialog Code: {code}, Number: {number}")
-            self.inventoryManager.update_quantity(code, int(number))
+            self.inventoryManager.update_quantity(self.get_table_name(), code, int(number))
 
-        inventory_dict = self.inventoryManager.get_inventory_dict()
+        inventory_dict = self.inventoryManager._get_inventory_dict(self.get_table_name())
         self.inventory_table.update_table(inventory_dict)
 
     def inventory_table_scan_clicked(self):
@@ -78,14 +83,13 @@ class InventoryPage(QWidget):
 
     def inventory_table_write_clicked(self):
         DBG_logger.logger.debug("inventory_table_write_clicked")
-        index = self.app.tab_widget.currentIndex()
-        tab_name = self.app.tab_widget.tabText(index)
-        self.inventoryManager.save_inventory_to_file(tab_name)
+        self.inventoryManager.save_inventory_to_file(self.get_table_name())
 
     def setup_link(self):
         self.quantity_control_button.clicked.connect(self.show_dialog)
-        self.refresh_btn.clicked.connect(self.refresh_btn_clicked)
+        # self.refresh_btn.clicked.connect(self.refresh_btn_clicked)
         self.inventory_table_scan_btn.clicked.connect(self.inventory_table_scan_clicked)
         self.inventory_table_plus_btn.clicked.connect(self.inventory_table_plus_clicked)
         self.inventory_table_minus_btn.clicked.connect(self.inventory_table_minus_clicked)
         self.inventory_table_write_btn.clicked.connect(self.inventory_table_write_clicked)
+

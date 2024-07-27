@@ -31,14 +31,18 @@ class CoffeeLionApp(QMainWindow):
 
     def setup_variables(self):
         self.manager = productManager.ProductManager(json_file_path)
-        self.official_inventoryManager = inventoryManager.InventoryManager('official_inventory.db')
-        self.shopee_inventoryManager = inventoryManager.InventoryManager('shopee_inventory.db')
+        self.inventoryManager = inventoryManager.InventoryManager('coffeelion_inventory.db')
         self.scan_btn_state = False
         self.scan_mode = None  # 0: '+' 1: '-'
 
     def on_tab_changed(self, index):
         tab_name = self.tab_widget.tabText(index)
         self.page_status_label.setText(f"{tab_name}")
+        current_page = self.tab_widget.widget(index)
+
+        if isinstance(current_page, InventoryPage):
+            inventory_dict = self.inventoryManager._get_inventory_dict(tab_name)
+            current_page.inventory_table.update_table(inventory_dict)
 
     def init_ui(self):
         self.setWindowTitle("CoffeeLion")
@@ -51,7 +55,7 @@ class CoffeeLionApp(QMainWindow):
         main_layout.addWidget(self.tab_widget)
 
         self.log_textBrowser = LogTextBrowser()
-        main_layout.addWidget(self.log_textBrowser)
+        # main_layout.addWidget(self.log_textBrowser)
         DBG_logger.setup_logging(self.log_textBrowser, level=logging.NOTSET)
 
         scroll_area = QScrollArea()
@@ -66,13 +70,13 @@ class CoffeeLionApp(QMainWindow):
 
     def create_tabs(self):
         tab_widget = QTabWidget()
-        checkoutPage = CheckoutPage(self, self.manager)
-        tab_widget.addTab(checkoutPage, "Checkout")
-        inventoryPage = InventoryPage(self, self.official_inventoryManager)
-        tab_widget.addTab(inventoryPage, "Inventory(official)")
-        inventoryPage = InventoryPage(self, self.shopee_inventoryManager)
-        tab_widget.addTab(inventoryPage, "Inventory(shopee)")
-
+        checkoutPage0 = CheckoutPage(self, self.manager)
+        tab_widget.addTab(checkoutPage0, "Checkout")
+        inventoryPage1 = InventoryPage(self, self.inventoryManager)
+        tab_widget.addTab(inventoryPage1, "Official")
+        inventoryPage2 = InventoryPage(self, self.inventoryManager)
+        tab_widget.addTab(inventoryPage2, "Shopee")
+        
         return tab_widget
 
     def create_status_bar(self):
