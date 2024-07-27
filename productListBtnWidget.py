@@ -24,8 +24,9 @@ class productListBtnWidget(QWidget):
 
         max_name_width = max(len(item["Name"]) for item in data["CoffeeLineProduct"])
 
+        sorted_items = sorted(data["CoffeeLineProduct"], key=lambda x: x["Code"])
         # 根據 JSON 中的項目數量新增按鈕
-        for item in data["CoffeeLineProduct"]:
+        for item in sorted_items:
             code = item["Code"]
             name = item["Name"]
             price = item["Price"]
@@ -62,6 +63,7 @@ class productListBtnWidget(QWidget):
 
             layout.addLayout(hbox)
             layout.setSpacing(1)
+
     def on_plus_clicked(self, name):
         self.increaseQuantity.emit(name)
         DBG_logger.logger.debug(f"order {name} +1 clicked")
