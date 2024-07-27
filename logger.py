@@ -30,16 +30,17 @@ class Logger:
             cls._instance = super().__new__(cls)
         return cls._instance
 
-    def setup_logging(self, log_text_browser: QTextBrowser, level=logging.NOTSET):
+    def setup_logging(self, log_text_browser=None, level=logging.NOTSET):
         # create logger
         self.logger = logging.getLogger()
         self.logger.setLevel(level)
 
-        # create logger handler send log to QTextBrowser
-        log_handler = QTextBrowserLogHandler(log_text_browser)
         formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(filename)s %(funcName)s %(lineno)d: %(message)s')
-        log_handler.setFormatter(formatter)
-        self.logger.addHandler(log_handler)
+        # create logger handler send log to QTextBrowser
+        if log_text_browser != None:
+            log_handler = QTextBrowserLogHandler(log_text_browser)
+            log_handler.setFormatter(formatter)
+            self.logger.addHandler(log_handler)
 
         # create logger handler send log to QTextBrowser
         file_handler = logging.FileHandler(file_path)

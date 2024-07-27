@@ -18,7 +18,7 @@ application_path = os.path.dirname(os.path.abspath(__file__))
 json_file_path = os.path.join(application_path, 'coffeelionProductList.json')
 record_file_path = os.path.join(application_path, 'recorder.txt')
 
-release_version = '242020v01 45f4d3'
+release_version = '240727 970504'
 
 class CoffeeLionApp(QMainWindow):
     scanModeSignal = pyqtSignal(str, int)
@@ -54,9 +54,10 @@ class CoffeeLionApp(QMainWindow):
         self.tab_widget.currentChanged.connect(self.on_tab_changed)
         main_layout.addWidget(self.tab_widget)
 
-        self.log_textBrowser = LogTextBrowser()
+        # self.log_textBrowser = LogTextBrowser()
         # main_layout.addWidget(self.log_textBrowser)
-        DBG_logger.setup_logging(self.log_textBrowser, level=logging.NOTSET)
+        # DBG_logger.setup_logging(self.log_textBrowser, level=logging.NOTSET)
+        DBG_logger.setup_logging(level=logging.NOTSET)
 
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
