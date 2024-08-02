@@ -19,7 +19,7 @@ class CheckoutPage(QWidget):
         super().__init__()
         self.app = app
         self.manager = manager
-        
+
         self.input_text = ""
         self.pay_method = 'Cash'
         self.order_num = 0
@@ -147,19 +147,26 @@ class CheckoutPage(QWidget):
         self.payment_combo.currentIndexChanged.connect(self.update_pay_method)
     
     def keyPressEvent(self, event):
-        if not self.scan_btn_state:
+        self.setFocus()
+        super().keyPressEvent(event)
+        print(f"Key pressed: {event.text()} (Key code: {event.key()})")
+        key_text = event.text()
+
+        if not self.app.scan_btn_state:
             DBG_logger.logger.info("非掃描添加模式")
             return
 
-        key_text = event.text()
         if key_text.isdigit():
             self.input_text += key_text
+ 
         elif event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
             if not self.input_text.isdigit():
+                self.input_text = ""  # 清空輸入以避免後續處理錯誤
                 DBG_logger.logger.info("滑鼠點擊 Log 顯示視窗")
-                return
+
             DBG_logger.logger.debug(f"Scan {self.input_text} -> {self.manager.find_product_by_code(self.input_text)} mode {self.scan_mode}")
-            self.scanModeSignal.emit(str(self.manager.find_product_by_code(self.input_text)), int(self.scan_mode))
+            print(f"Scan {self.input_text} -> {self.manager.find_product_by_code(self.input_text)} mode {self.scan_mode}")
+            self.app.scanModeSignal.emit(str(self.manager.find_product_by_code(self.input_text)), int(self.scan_mode))
             self.input_text = ""
         else:
             DBG_logger.logger.info("輸入法有誤")

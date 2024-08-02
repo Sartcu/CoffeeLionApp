@@ -30,22 +30,6 @@ class ProductManager(QObject):
 
         return products_dict
 
-    # @property
-    # def products_dict(self):
-    #     return self._products_dict
-    #
-    # @products_dict.setter
-    # def products_dict(self, value):
-    #     self._products_dict = value
-    #     self.updateTable.emit()
-    #
-    # def __setitem__(self, key, value):
-    #     """
-    #     覆盖字典的 __setitem__ 方法，在设置 products_dict 的同时触发 updateTable 信号
-    #     """
-    #     self._products_dict[key] = value
-    #     self.updateTable.emit()
-
     def find_product_by_code(self, code):
         for product_key, product_info in self.products_dict.items():
             if product_info['Code'] == code:
