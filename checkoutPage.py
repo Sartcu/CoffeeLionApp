@@ -3,7 +3,7 @@ from PyQt6.QtWidgets import (QVBoxLayout, QHBoxLayout, QWidget, QPushButton, QSi
 from logger import DBG_logger
 from orderTableWidget import orderTableWidget
 from productListBtnWidget import productListBtnWidget
-import time, os
+import time, os, json
 from functools import partial
 
 application_path = os.path.dirname(os.path.abspath(__file__))
@@ -23,7 +23,9 @@ class CheckoutPage(QWidget):
         self.input_text = ""
         self.pay_method = 'Cash'
         self.order_num = 0
-        
+        self.discount_codes = {}
+        self.discount = 1
+
         self.setup_ui()
         self.setup_link()
 
@@ -55,6 +57,19 @@ class CheckoutPage(QWidget):
 
         self.checkout_button = QPushButton("Checkout")
         order_button_layout.addWidget(self.checkout_button)
+
+        with open('discount.json', 'r', encoding='utf-8') as f:
+            discount_data = json.load(f)
+
+        self.discount_combo = QComboBox()
+    
+        for discount in discount_data['discount']:
+            name = discount['Name']
+            value = discount['Value']
+            self.discount_combo.addItem(name)
+            self.discount_codes[name] = value
+
+        order_button_layout.addWidget(self.discount_combo)
 
         self.payment_combo = QComboBox()
         self.payment_combo.addItem("Cash")
@@ -92,6 +107,7 @@ class CheckoutPage(QWidget):
 
     def create_order_summary(self):
         order_summary = ""
+        sum_before_discount = 0
         sum_total_item_price = 0
         for product, details in self.manager.products_dict.items():
             price = details['Price']
@@ -101,13 +117,19 @@ class CheckoutPage(QWidget):
             if nums > 0:
                 order_summary += f"{product}: {price} * {nums} = {sum_each_item_price}\n"
                 write_to_record_file(f"{product}: {price} * {nums} = {sum_each_item_price}")
-                sum_total_item_price += sum_each_item_price
+                sum_before_discount += sum_each_item_price
+                sum_total_item_price = sum_before_discount * self.discount
+                write_to_record_file(f"Ori total: {sum_before_discount} * discount: {self.discount} = {sum_total_item_price}")
+
         return order_summary, sum_total_item_price
 
     def show_order_summary(self, order_summary, sum_total_item_price):
         msg_box = QMessageBox()
         msg_box.setWindowTitle("訂購清單")
-        msg_box.setText(f"訂購清單: \n{order_summary}\n\n 總價: {sum_total_item_price} 元 \n\n 支付方式: {self.pay_method}")
+        msg_box.setText(f"訂購清單: \n{order_summary}\n\n"
+                        f"折扣 {self.discount}\n"
+                        f"總價: {round(sum_total_item_price)} 元 \n\n"
+                        f"支付方式: {self.pay_method}")
         msg_box.exec()
 
     def reset_order(self):
@@ -132,7 +154,13 @@ class CheckoutPage(QWidget):
 
     def update_pay_method(self, index):
         self.pay_method = 'Cash' if index == 0 else 'LinePay'
-
+    
+    def on_discount_selected(self):
+        selected_name = self.discount_combo.currentText()
+        selected_value = self.discount_codes.get(selected_name)
+        self.discount = float(selected_value)
+        print(f"Selected Discount: {selected_name}, Value: {selected_value}, discount: {self.discount}")
+    
     def setup_link(self):
         self.order_button.clicked.connect(self.order_btn_clicked)
         self.checkout_button.clicked.connect(self.checkout_btn_clicked)
@@ -145,11 +173,12 @@ class CheckoutPage(QWidget):
         self.manager.updateTable.connect(partial(self.order_table.update_order_table, self.manager))
         self.app.scanModeSignal.connect(self.manager.scan_mode_from_signal)
         self.payment_combo.currentIndexChanged.connect(self.update_pay_method)
-    
+        self.discount_combo.currentIndexChanged.connect(self.on_discount_selected)
+
     def keyPressEvent(self, event):
         self.setFocus()
         super().keyPressEvent(event)
-        print(f"Key pressed: {event.text()} (Key code: {event.key()})")
+        # print(f"Key pressed: {event.text()} (Key code: {event.key()})")
         key_text = event.text()
 
         if not self.app.scan_btn_state:

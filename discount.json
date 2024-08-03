@@ -1,0 +1,19 @@
+{
+  "discount": [
+    {
+      "Name": "No discount",
+      "Value": "1"
+    },
+    {
+      "Name": "8折",
+      "Value": "0.8"
+    },
+    {
+      "Name": "9折",
+      "Value": "0.9"
+    }
+  ]
+}
+
+
+
